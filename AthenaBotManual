@@ -1,0 +1,1840 @@
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Gist
+ @aliciazhang
+ Watch 0
+  Star 0
+ Fork 0 aliciazhang/copypasta
+ Code  Issues 0  Pull requests 0  Projects 0  Wiki  Pulse  Graphs  Settings
+Branch: master Find file Copy pathcopypasta/AthenaBotManual
+2e1579f  8 days ago
+@aliciazhang aliciazhang Indents
+1 contributor
+RawBlameHistory     
+1822 lines (1544 sloc)  45.4 KB
+package com.qualcomm.ftcrobotcontroller.opmodes;
+
+import com.qualcomm.ftccommon.DbgLog;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorController;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+
+
+//------------------------------------------------------------------------------
+//
+// PushBotHardware
+//
+
+/**
+ * Provides a single hardware access point between custom op-modes and the
+ * OpMode class for the Push Bot.
+ *
+ * This class prevents the custom op-mode from throwing an exception at runtime.
+ * If any hardware fails to map, a warning will be shown via telemetry data,
+ * calls to methods will fail, but will not cause the application to crash.
+ *
+ * @author SSI Robotics
+ * @version 2015-08-13-20-04
+ *
+ * Modified by Labanya Mukhopadhyay
+ * Athena FTC team, EVHS,  San Jose
+ */
+//public class AthenaBotManual extends OpMode
+public class AthenaBotManual_1 extends OpMode
+
+{
+    //--------------------------------------------------------------------------
+    //
+    // PushBotHardware
+    //
+    final static double HAND_R_MIN_RANGE  = 0.0;
+    final static double HAND_R_MAX_RANGE  = 0.7;
+    final static double HAND_L_MIN_RANGE  = 0.0;
+    final static double HAND_L_MAX_RANGE  = 0.7;
+
+
+
+
+    /**
+     * Construct the class.
+     *
+     * The system calls this member when the class is instantiated.
+     */
+    public AthenaBotManual_1()
+
+    {
+        //
+        // Initialize base classes.
+        //
+        // All via self-construction.
+
+        //
+        // Initialize class members.
+        //
+        // All via self-construction.
+
+    } // PushBotHardware
+
+    //--------------------------------------------------------------------------
+    //
+    // init
+    //
+    /**
+     * Perform any actions that are necessary when the OpMode is enabled.
+     *
+     * The system calls this member once when the OpMode is enabled.
+     */
+    @Override public void init ()
+
+    {
+        //
+        // Use the hardwareMap to associate class members to hardware ports.
+        //
+        // Note that the names of the devices (i.e. arguments to the get method)
+        // must match the names specified in the configuration file created by
+        // the FTC Robot Controller (Settings-->Configure Robot).
+        //
+        // The variable below is used to provide telemetry data to a class user.
+        //
+        v_warning_generated = false;
+        v_warning_message = "Can't map; ";
+
+        //
+        // Connect the drive wheel motors.
+        //
+        // The direction of the right motor is reversed, so joystick inputs can
+        // be more generically applied.
+        //
+        try
+        {
+            v_motor_left_drive = hardwareMap.dcMotor.get ("motor_1");
+            //v_motor_left_drive.setDirection (DcMotor.Direction.REVERSE);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("motor_1");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_motor_left_drive = null;
+        }
+
+        try
+        {
+            v_motor_right_drive = hardwareMap.dcMotor.get ("motor_2");
+            v_motor_right_drive.setDirection (DcMotor.Direction.REVERSE);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("motor_2");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_motor_right_drive = null;
+        }
+
+        try {
+            v_motor_left_drive_2 = hardwareMap.dcMotor.get("motor_3");
+            //v_motor_right_drive.setDirection (DcMotor.Direction.REVERSE);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("motor_3");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_motor_left_drive_2 = null;
+        }
+
+        try
+        {
+            v_motor_right_drive_2 = hardwareMap.dcMotor.get ("motor_4");
+            v_motor_right_drive_2.setDirection (DcMotor.Direction.REVERSE);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("motor_4");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_motor_right_drive_2 = null;
+        }
+
+        //
+        // Connect the left arm motor.
+        //
+        try
+        {
+            v_motor_arm = hardwareMap.dcMotor.get ("motor_5");
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("motor_5");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_motor_arm = null;
+        }
+
+        //
+
+        // Connect the Tape measure motor.
+
+        try
+        {
+            v_motor_tape_msr = hardwareMap.dcMotor.get ("motor_6");
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("motor_6");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_motor_tape_msr = null;
+        }
+
+
+        //
+        // Connect the servo motors.
+        //
+        // Indicate the initial position of both the left and right servos.  The
+        // hand should be closed in the beginning.
+        //
+        double arm_elbow_position = 1.0;
+        double arm_elbow_position2 = 0.0;
+
+
+//     Servo for arm elbow
+        try
+        {
+            v_servo_arm_elbow = hardwareMap.servo.get ("servo_1");
+            v_servo_arm_elbow.setPosition (arm_elbow_position);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("servo_1");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_servo_arm_elbow = null;
+        }
+
+
+        try
+        {
+            v_servo_arm_elbow2 = hardwareMap.servo.get ("servo_2");
+            v_servo_arm_elbow2.setPosition (arm_elbow_position2);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("servo_1");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_servo_arm_elbow2 = null;
+        }
+
+    //    double l_fling_position = 0.0;
+        double r_fling_position = 1.0;
+        // Servo for left fling
+  /*      try
+        {
+            v_servo_left_fling = hardwareMap.servo.get ("servo_2");
+            v_servo_left_fling.setPosition (l_fling_position);
+        }
+
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("servo_2");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+   //         v_servo_left_fling = null;
+        }
+*/
+        // Servo for right fling
+        try
+        {
+            v_servo_right_fling = hardwareMap.servo.get ("servo_3");
+            v_servo_right_fling.setPosition (r_fling_position);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("servo_3");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_servo_right_fling = null;
+        }
+
+        double l_zipline_position = 0.0;
+        double r_zipline_position = 1.0;
+
+        // Servo for left zipline trigger
+        try
+        {
+            v_servo_left_zipline = hardwareMap.servo.get ("servo_4");
+            v_servo_left_zipline.setPosition (l_zipline_position);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("servo_4");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_servo_left_zipline = null;
+        }
+
+        // Servo for right zipline
+        try
+        {
+            v_servo_right_zipline = hardwareMap.servo.get ("servo_5");
+            v_servo_right_zipline.setPosition (r_zipline_position);
+        }
+        catch (Exception p_exeception)
+        {
+            m_warning_message ("servo_5");
+            DbgLog.msg (p_exeception.getLocalizedMessage ());
+
+            v_servo_right_zipline = null;
+        }
+
+
+    } // init
+
+    //--------------------------------------------------------------------------
+    //
+    // a_warning_generated
+    //
+    /**
+     * Access whether a warning has been generated.
+     */
+    boolean a_warning_generated ()
+
+    {
+        return v_warning_generated;
+
+    } // a_warning_generated
+
+    //--------------------------------------------------------------------------
+    //
+    // a_warning_message
+    //
+    /**
+     * Access the warning message.
+     */
+    String a_warning_message ()
+
+    {
+        return v_warning_message;
+
+    } // a_warning_message
+
+    //--------------------------------------------------------------------------
+    //
+    // m_warning_message
+    //
+    /**
+     * Mutate the warning message by ADDING the specified message to the current
+     * message; set the warning indicator to true.
+     *
+     * A comma will be added before the specified message if the message isn't
+     * empty.
+     */
+    void m_warning_message (String p_exception_message)
+
+    {
+        if (v_warning_generated)
+        {
+            v_warning_message += ", ";
+        }
+        v_warning_generated = true;
+        v_warning_message += p_exception_message;
+
+    } // m_warning_message
+
+    //--------------------------------------------------------------------------
+    //
+    // start
+    //
+    /**
+     * Perform any actions that are necessary when the OpMode is enabled.
+     *
+     * The system calls this member once when the OpMode is enabled.
+     */
+    @Override public void start ()
+
+    {
+        //
+        // Only actions that are common to all Op-Modes (i.e. both automatic and
+        // manual) should be implemented here.
+        //
+        // This method is designed to be overridden.
+        //
+
+    } // start
+
+    //--------------------------------------------------------------------------
+    //
+    // loop
+    //
+    /**
+     * Perform any actions that are necessary while the OpMode is running.
+     *
+     * The system calls this member repeatedly while the OpMode is running.
+     */
+    @Override public void loop ()
+
+    {
+        //
+        // Only actions that are common to all OpModes (i.e. both auto and\
+        // manual) should be implemented here.
+        //
+        // This method is designed to be overridden.
+        //
+       /*
+       *
+       * Gamepad 1 controls the motors via the left and right sticks
+       */
+
+        //
+        // Manage the drive wheel motors.
+        //
+        float l_left_drive_power = scale_motor_power (-gamepad1.left_stick_y);
+        float l_right_drive_power = scale_motor_power (-gamepad1.right_stick_y);
+
+        set_drive_power (l_left_drive_power, l_right_drive_power);
+
+       /*
+       *
+       * Gamepad 2 controls the Arm shoulder motors via
+       * the left stick
+       */
+
+       float l_arm_power = scale_motor_power (-gamepad2.left_stick_y)/2;
+        m_arm_power(l_arm_power);
+
+       /*
+       *
+       * Gamepad 2's  controls the Tape Measure motors via
+       * the right stick
+       */
+
+        float l_tape_msr_power = scale_motor_power (-gamepad2.right_stick_y);
+        m_tape_msr_power (l_tape_msr_power);
+
+        //----------------------------------------------------------------------
+        //
+        // Servo Motors
+        //
+        // Obtain the current values of the gamepad 'x' and 'b' buttons.
+        //
+        // Note that x and b buttons have boolean values of true and false.
+        //
+        // The clip method guarantees the value never exceeds the allowable range of
+        // [0,1].
+        //
+        // The setPosition methods write the motor power values to the Servo
+        // class, but the positions aren't applied until this method ends.
+
+        /*
+         Gamepad 2 'x' will open the left elbow, 'a' will close the left elbow
+
+         */
+
+        //
+        // amount to change the elbow servo position by
+        double l_hand_Delta = 0.2;
+        double r_hand_Delta = 0.2;
+
+        if (gamepad2.left_bumper)
+        {
+            m_arm_elbow_position(a_arm_elbow_position() - 0.02);
+        }
+        else if (gamepad2.right_bumper)
+        {
+            m_arm_elbow_position(a_arm_elbow_position() + 0.02);
+        }
+
+
+        if (gamepad2.left_bumper)
+        {
+            m_arm_elbow_position2(a_arm_elbow_position2() + 0.02);
+        }
+        else if (gamepad2.right_bumper)
+        {
+            m_arm_elbow_position2(a_arm_elbow_position2() - 0.02);
+        }
+
+        // Left Fling control
+
+    /*    if (gamepad2.x)
+        {
+            m_left_fling_position(a_left_fling_position() + 0.02);
+        }
+        else if (gamepad2.a)
+        {
+            m_left_fling_position(a_left_fling_position() - 0.02);
+        }
+*/
+        // Right Fling control
+
+        if (gamepad2.y)
+        {
+            m_right_fling_position(a_right_fling_position() + 0.05);
+        }
+        else if (gamepad2.b)
+        {
+            m_right_fling_position(a_right_fling_position() - 0.05);
+        }
+
+        // Left Zipline control
+
+        if (gamepad1.x)
+        {
+            m_left_zipline_position(a_left_zipline_position() + 0.05);
+        }
+        else if (gamepad1.a)
+        {
+            m_left_zipline_position(a_left_zipline_position() - 0.05);
+        }
+
+        // Right Zipline control
+
+        if (gamepad1.y)
+        {
+            m_right_zipline_position(a_right_zipline_position() + 0.05);
+        }
+        else if (gamepad1.b)
+        {
+            m_right_zipline_position(a_right_zipline_position() - 0.05);
+        }
+
+        //
+        // Send telemetry data to the driver station.
+        //
+        update_telemetry (); // Update common telemetry
+        update_gamepad_telemetry ();
+
+    } // loop
+
+    //--------------------------------------------------------------------------
+    //
+    // stop
+    //
+    /**
+     * Perform any actions that are necessary when the OpMode is disabled.
+     *
+     * The system calls this member once when the OpMode is disabled.
+     */
+    @Override public void stop ()
+    {
+        //
+        // Nothing needs to be done for this method.
+        //
+
+    } // stop
+
+    //--------------------------------------------------------------------------
+    //
+    // scale_motor_power
+    //
+    /**
+     * Scale the joystick input using a nonlinear algorithm.
+     */
+    float scale_motor_power (float p_power)
+    {
+        //
+        // Assume no scaling.
+        //
+        float l_scale = 0.0f;
+
+        //
+        // Ensure the values are legal.
+        //
+        float l_power = Range.clip(p_power, -1, 1);
+
+        float[] l_array =
+            { 0.00f, 0.05f, 0.09f, 0.10f, 0.12f
+            , 0.15f, 0.18f, 0.24f, 0.30f, 0.36f
+            , 0.43f, 0.50f, 0.60f, 0.72f, 0.85f
+            , 1.00f, 1.00f
+            };
+
+        //
+        // Get the corresponding index for the specified argument/parameter.
+        //
+        int l_index = (int)(l_power * 16.0);
+        if (l_index < 0)
+        {
+            l_index = -l_index;
+        }
+        else if (l_index > 16)
+        {
+            l_index = 16;
+        }
+
+        if (l_power < 0)
+        {
+            l_scale = -l_array[l_index];
+        }
+        else
+        {
+            l_scale = l_array[l_index];
+        }
+
+        return l_scale;
+
+    } // scale_motor_power
+
+    //--------------------------------------------------------------------------
+    //
+    // a_left_drive_power
+    //
+    /**
+     * Access the left drive motor's power level.
+     */
+    double a_left_drive_power ()
+    {
+        double l_return = 0.0;
+
+        if (v_motor_left_drive != null)
+        {
+            l_return = v_motor_left_drive.getPower ();
+        }
+
+        return l_return;
+
+    } // a_left_drive_power
+
+    /**
+     * Access the left drive 2nd motor's power level.
+     */
+    double a_left_drive2_power ()
+    {
+        double l_return = 0.0;
+
+        if (v_motor_left_drive_2 != null)
+        {
+            l_return = v_motor_left_drive_2.getPower ();
+        }
+
+        return l_return;
+
+    } // a_left_drive2_power
+
+    //--------------------------------------------------------------------------
+    //
+    // a_right_drive_power
+    //
+    /**
+     * Access the right drive motor's power level.
+     */
+    double a_right_drive_power ()
+    {
+        double l_return = 0.0;
+
+        if (v_motor_right_drive != null)
+        {
+            l_return = v_motor_right_drive.getPower ();
+        }
+
+        return l_return;
+
+    } // a_right_drive_power
+
+    /**
+     * Access the right drive motor's power level.
+     */
+    double a_right_drive2_power ()
+    {
+        double l_return = 0.0;
+
+        if (v_motor_right_drive_2 != null)
+        {
+            l_return = v_motor_right_drive_2.getPower ();
+        }
+
+        return l_return;
+
+    } // a_right_drive_power
+
+    //--------------------------------------------------------------------------
+    //
+    // set_drive_power
+    //
+    /**
+     * Scale the joystick input using a nonlinear algorithm.
+     */
+    void set_drive_power (double p_left_power, double p_right_power)
+
+    {
+        if (v_motor_left_drive != null)
+        {
+            v_motor_left_drive.setPower (p_left_power);
+        }
+        if (v_motor_left_drive_2 != null)
+        {
+            v_motor_left_drive_2.setPower (p_left_power);
+        }
+        if (v_motor_right_drive != null)
+        {
+            v_motor_right_drive.setPower (p_right_power);
+        }
+        if (v_motor_right_drive_2 != null)
+        {
+            v_motor_right_drive_2.setPower(p_right_power);
+        }
+    } // set_drive_power
+
+    //--------------------------------------------------------------------------
+    //
+    // run_using_left_drive_encoder
+    //
+    /**
+     * Set the left drive wheel encoder to run, if the mode is appropriate.
+     */
+    public void run_using_left_drive_encoder ()
+
+    {
+        if (v_motor_left_drive != null)
+        {
+            v_motor_left_drive.setChannelMode
+                    (DcMotorController.RunMode.RUN_USING_ENCODERS
+                    );
+        }
+
+    } // run_using_left_drive_encoder
+
+    //--------------------------------------------------------------------------
+    //
+    // run_using_right_drive_encoder
+    //
+    /**
+     * Set the right drive wheel encoder to run, if the mode is appropriate.
+     */
+    public void run_using_right_drive_encoder ()
+
+    {
+        if (v_motor_right_drive != null)
+        {
+            v_motor_right_drive.setChannelMode
+                    (DcMotorController.RunMode.RUN_USING_ENCODERS
+                    );
+        }
+
+    } // run_using_right_drive_encoder
+
+    //--------------------------------------------------------------------------
+    //
+    // run_using_encoders
+    //
+    /**
+     * Set both drive wheel encoders to run, if the mode is appropriate.
+     */
+    public void run_using_encoders ()
+
+    {
+        //
+        // Call other members to perform the action on both motors.
+        //
+        run_using_left_drive_encoder ();
+        run_using_right_drive_encoder ();
+
+    } // run_using_encoders
+
+    //--------------------------------------------------------------------------
+    //
+    // run_without_left_drive_encoder
+    //
+    /**
+     * Set the left drive wheel encoder to run, if the mode is appropriate.
+     */
+    public void run_without_left_drive_encoder ()
+
+    {
+        if (v_motor_left_drive != null)
+        {
+            if (v_motor_left_drive.getChannelMode () ==
+                DcMotorController.RunMode.RESET_ENCODERS)
+            {
+                v_motor_left_drive.setChannelMode
+                    ( DcMotorController.RunMode.RUN_WITHOUT_ENCODERS
+                    );
+            }
+        }
+
+    } // run_without_left_drive_encoder
+
+    //--------------------------------------------------------------------------
+    //
+    // run_without_right_drive_encoder
+    //
+    /**
+     * Set the right drive wheel encoder to run, if the mode is appropriate.
+     */
+    public void run_without_right_drive_encoder ()
+
+    {
+        if (v_motor_right_drive != null)
+        {
+            if (v_motor_right_drive.getChannelMode () ==
+                DcMotorController.RunMode.RESET_ENCODERS)
+            {
+                v_motor_right_drive.setChannelMode
+                    ( DcMotorController.RunMode.RUN_WITHOUT_ENCODERS
+                    );
+            }
+        }
+
+    } // run_without_right_drive_encoder
+
+    //--------------------------------------------------------------------------
+    //
+    // run_without_drive_encoders
+    //
+    /**
+     * Set both drive wheel encoders to run, if the mode is appropriate.
+     */
+    public void run_without_drive_encoders ()
+
+    {
+        //
+        // Call other members to perform the action on both motors.
+        //
+        run_without_left_drive_encoder ();
+        run_without_right_drive_encoder ();
+
+    } // run_without_drive_encoders
+
+    //--------------------------------------------------------------------------
+    //
+    // reset_left_drive_encoder
+    //
+    /**
+     * Reset the left drive wheel encoder.
+     */
+    public void reset_left_drive_encoder ()
+
+    {
+        if (v_motor_left_drive != null)
+        {
+            v_motor_left_drive.setChannelMode
+                ( DcMotorController.RunMode.RESET_ENCODERS
+                );
+        }
+
+    } // reset_left_drive_encoder
+
+    //--------------------------------------------------------------------------
+    //
+    // reset_right_drive_encoder
+    //
+    /**
+     * Reset the right drive wheel encoder.
+     */
+    public void reset_right_drive_encoder ()
+
+    {
+        if (v_motor_right_drive != null)
+        {
+            v_motor_right_drive.setChannelMode
+                ( DcMotorController.RunMode.RESET_ENCODERS
+                );
+        }
+
+    } // reset_right_drive_encoder
+
+    //--------------------------------------------------------------------------
+    //
+    // reset_drive_encoders
+    //
+    /**
+     * Reset both drive wheel encoders.
+     */
+    public void reset_drive_encoders ()
+
+    {
+        //
+        // Reset the motor encoders on the drive wheels.
+        //
+        reset_left_drive_encoder ();
+        reset_right_drive_encoder ();
+
+    } // reset_drive_encoders
+
+    //--------------------------------------------------------------------------
+    //
+    // a_left_encoder_count
+    //
+    /**
+     * Access the left encoder's count.
+     */
+    int a_left_encoder_count ()
+    {
+        int l_return = 0;
+
+        if (v_motor_left_drive != null)
+        {
+            l_return = v_motor_left_drive.getCurrentPosition ();
+        }
+
+        return l_return;
+
+    } // a_left_encoder_count
+
+    //--------------------------------------------------------------------------
+    //
+    // a_right_encoder_count
+    //
+    /**
+     * Access the right encoder's count.
+     */
+    int a_right_encoder_count ()
+
+    {
+        int l_return = 0;
+
+        if (v_motor_right_drive != null)
+        {
+            l_return = v_motor_right_drive.getCurrentPosition ();
+        }
+
+        return l_return;
+
+    } // a_right_encoder_count
+
+    //--------------------------------------------------------------------------
+    //
+    // has_left_drive_encoder_reached
+    //
+    /**
+     * Indicate whether the left drive motor's encoder has reached a value.
+     */
+    boolean has_left_drive_encoder_reached (double p_count)
+
+    {
+        //
+        // Assume failure.
+        //
+        boolean l_return = false;
+
+        if (v_motor_left_drive != null)
+        {
+            //
+            // Has the encoder reached the specified values?
+            //
+            // TODO Implement stall code using these variables.
+            //
+            if (Math.abs (v_motor_left_drive.getCurrentPosition ()) > p_count)
+            {
+                //
+                // Set the status to a positive indication.
+                //
+                l_return = true;
+            }
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // has_left_drive_encoder_reached
+
+    //--------------------------------------------------------------------------
+    //
+    // has_right_drive_encoder_reached
+    //
+    /**
+     * Indicate whether the right drive motor's encoder has reached a value.
+     */
+    boolean has_right_drive_encoder_reached (double p_count)
+
+    {
+        //
+        // Assume failure.
+        //
+        boolean l_return = false;
+
+        if (v_motor_right_drive != null)
+        {
+            //
+            // Have the encoders reached the specified values?
+            //
+            // TODO Implement stall code using these variables.
+            //
+            if (Math.abs (v_motor_right_drive.getCurrentPosition ()) > p_count)
+            {
+                //
+                // Set the status to a positive indication.
+                //
+                l_return = true;
+            }
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // has_right_drive_encoder_reached
+
+    //--------------------------------------------------------------------------
+    //
+    // have_drive_encoders_reached
+    //
+    /**
+     * Indicate whether the drive motors' encoders have reached a value.
+     */
+    boolean have_drive_encoders_reached
+        ( double p_left_count
+        , double p_right_count
+        )
+
+    {
+        //
+        // Assume failure.
+        //
+        boolean l_return = false;
+
+        //
+        // Have the encoders reached the specified values?
+        //
+        if (has_left_drive_encoder_reached (p_left_count) &&
+            has_right_drive_encoder_reached (p_right_count))
+        {
+            //
+            // Set the status to a positive indication.
+            //
+            l_return = true;
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // have_encoders_reached
+
+    //--------------------------------------------------------------------------
+    //
+    // drive_using_encoders
+    //
+    /**
+     * Indicate whether the drive motors' encoders have reached a value.
+     */
+    boolean drive_using_encoders
+        ( double p_left_power
+        , double p_right_power
+        , double p_left_count
+        , double p_right_count
+        )
+
+    {
+        //
+        // Assume the encoders have not reached the limit.
+        //
+        boolean l_return = false;
+
+        //
+        // Tell the system that motor encoders will be used.
+        //
+        run_using_encoders ();
+
+        //
+        // Start the drive wheel motors at full power.
+        //
+        set_drive_power (p_left_power, p_right_power);
+
+        //
+        // Have the motor shafts turned the required amount?
+        //
+        // If they haven't, then the op-mode remains in this state (i.e this
+        // block will be executed the next time this method is called).
+        //
+        if (have_drive_encoders_reached (p_left_count, p_right_count))
+        {
+            //
+            // Reset the encoders to ensure they are at a known good value.
+            //
+            reset_drive_encoders ();
+
+            //
+            // Stop the motors.
+            //
+            set_drive_power (0.0f, 0.0f);
+
+            //
+            // Transition to the next state when this method is called
+            // again.
+            //
+            l_return = true;
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // drive_using_encoders
+
+    //--------------------------------------------------------------------------
+    //
+    // has_left_drive_encoder_reset
+    //
+    /**
+     * Indicate whether the left drive encoder has been completely reset.
+     */
+    boolean has_left_drive_encoder_reset ()
+    {
+        //
+        // Assume failure.
+        //
+        boolean l_return = false;
+
+        //
+        // Has the left encoder reached zero?
+        //
+        if (a_left_encoder_count() == 0)
+        {
+            //
+            // Set the status to a positive indication.
+            //
+            l_return = true;
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // has_left_drive_encoder_reset
+
+    //--------------------------------------------------------------------------
+    //
+    // has_right_drive_encoder_reset
+    //
+    /**
+     * Indicate whether the left drive encoder has been completely reset.
+     */
+    boolean has_right_drive_encoder_reset ()
+    {
+        //
+        // Assume failure.
+        //
+        boolean l_return = false;
+
+        //
+        // Has the right encoder reached zero?
+        //
+        if (a_right_encoder_count() == 0)
+        {
+            //
+            // Set the status to a positive indication.
+            //
+            l_return = true;
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // has_right_drive_encoder_reset
+
+    //--------------------------------------------------------------------------
+    //
+    // have_drive_encoders_reset
+    //
+    /**
+     * Indicate whether the encoders have been completely reset.
+     */
+    boolean have_drive_encoders_reset ()
+    {
+        //
+        // Assume failure.
+        //
+        boolean l_return = false;
+
+        //
+        // Have the encoders reached zero?
+        //
+        if (has_left_drive_encoder_reset() && has_right_drive_encoder_reset ())
+        {
+            //
+            // Set the status to a positive indication.
+            //
+            l_return = true;
+        }
+
+        //
+        // Return the status.
+        //
+        return l_return;
+
+    } // have_drive_encoders_reset
+
+
+    //--------------------------------------------------------------------------
+    //
+    // a_arm_power
+    //
+    /**
+     * Access the arm motor's power level.
+     */
+
+
+   double a_arm_power ()
+
+
+    {
+        double l_return = 0.0;
+
+        if (v_motor_arm != null)
+        {
+            l_return = v_motor_arm.getPower ();
+        }
+
+        return l_return;
+
+    } // a_arm_power
+
+    //--------------------------------------------------------------------------
+    //
+    // m_arm_power
+    //
+    /**
+     * Access the arm motor's power level.
+     */
+
+    void m_arm_power (double p_level)
+    {
+        if (v_motor_arm != null)
+        {
+            v_motor_arm.setPower (p_level);
+        }
+
+    } // m_arm_power
+
+    //--------------------------------------------------------------------------
+    //
+    // a_tape_msr_power
+    //
+    /**
+     * Access the tape measure motor's power level.
+     */
+
+    double a_tape_msr_power ()
+    {
+        double l_return = 0.0;
+
+        if (v_motor_tape_msr != null)
+        {
+            l_return = v_motor_tape_msr.getPower ();
+        }
+
+        return l_return;
+
+    } // a_tape_msr_power
+
+    //--------------------------------------------------------------------------
+    //
+    // m_tape_msr_power
+    //
+    /**
+     * Access the tape measure motor's power level.
+     */
+
+    void m_tape_msr_power (double p_level)
+    {
+        if (v_motor_tape_msr != null)
+        {
+            v_motor_tape_msr.setPower (p_level);
+        }
+
+    } // m_tape_msr_power
+
+    //--------------------------------------------------------------------------
+    //
+    // a_arm_elbow_position
+    //
+    /**
+     * Access the arm elbow position.
+     */
+    double a_arm_elbow_position ()
+    {
+        double l_return = 0.0;
+
+        if (v_servo_arm_elbow != null)
+        {
+            l_return = v_servo_arm_elbow.getPosition();
+        }
+
+        return l_return;
+
+    } // a_arm_elbow_position
+
+    //--------------------------------------------------------------------------
+    //
+    // m_arm_elbow_position
+    //
+    /**
+     * Mutate the hand position.
+     */
+    void m_arm_elbow_position (double p_position)
+    {
+        //
+        // Ensure the specific value is legal.
+        //
+        double l_position = Range.clip
+            ( p_position
+            , Servo.MIN_POSITION
+            , Servo.MAX_POSITION
+            );
+
+        //
+        // Set the value.  The right hand value must be opposite of the left
+        // value.
+        //
+        if (v_servo_arm_elbow != null)
+        {
+            v_servo_arm_elbow.setPosition (l_position);
+            //v_servo_arm_elbow.setPosition (1.0 - l_position);
+        }
+
+    } // m_arm_elbow_position
+    //--------------------------------------------------------------------------
+    double a_arm_elbow_position2 ()
+    {
+        double l_return = 0.0;
+
+        if (v_servo_arm_elbow2 != null)
+        {
+            l_return = v_servo_arm_elbow2.getPosition();
+        }
+
+        return l_return;
+
+    } // a_arm_elbow_position
+
+    //--------------------------------------------------------------------------
+    //
+    // m_arm_elbow_position2
+    //
+    /**
+     * Mutate the hand position.
+     */
+    void m_arm_elbow_position2 (double p_position)
+    {
+        //
+        // Ensure the specific value is legal.
+        //
+        double l_position = Range.clip
+                ( p_position
+                        , Servo.MIN_POSITION
+                        , Servo.MAX_POSITION
+                );
+
+        //
+        // Set the value.  The right hand value must be opposite of the left
+        // value.
+        //
+        if (v_servo_arm_elbow2 != null)
+        {
+            v_servo_arm_elbow2.setPosition (l_position);
+            //v_servo_arm_elbow2.setPosition (1.0 - l_position);
+        }
+
+    } // m_arm_elbow_position2
+    //--------------------------------------------------------------------------
+    //
+    // a_left_fling_position
+    //
+    /**
+     * Access the left fling position.
+     */
+   /* double a_left_fling_position ()
+    {
+        double l_return = 0.0;
+
+        if (v_servo_left_fling != null)
+        {
+            l_return = v_servo_left_fling.getPosition ();
+        }
+
+        return l_return;
+
+    } // a_left_fling_position
+*/
+    //--------------------------------------------------------------------------
+    //
+    // m_left_fling_position
+    //
+    /**
+     * Mutate the left fling position.
+     */
+   /* void m_left_fling_position (double p_position)
+    {
+        //
+        // Ensure the specific value is legal.
+        //
+        double l_position = Range.clip
+                ( p_position
+                        , Servo.MIN_POSITION
+                        , Servo.MAX_POSITION
+                );
+*/
+        //
+        // Set the right hand value.
+        //
+    /*    if (v_servo_left_fling != null)
+        {
+           // v_servo_left_fling.setPosition (1.0 - l_position);
+            v_servo_left_fling.setPosition (l_position);
+        }
+
+    } // m_left_fling_position
+*/
+    //--------------------------------------------------------------------------
+    //
+    // a_right_fling_position
+    //
+    /**
+     * Access the right fling position.
+     */
+    double a_right_fling_position ()
+    {
+        double l_return = 0.0;
+
+        if (v_servo_right_fling != null)
+        {
+            l_return = v_servo_right_fling.getPosition ();
+        }
+
+        return l_return;
+
+    } // a_right_fling_position
+
+    //--------------------------------------------------------------------------
+    //
+    // m_right_fling_position
+    //
+    /**
+     * Mutate the right fling position.
+     */
+    void m_right_fling_position (double p_position)
+    {
+        //
+        // Ensure the specific value is legal.
+        //
+        double l_position = Range.clip
+                ( p_position
+                        , Servo.MIN_POSITION
+                        , Servo.MAX_POSITION
+                );
+
+        //
+        // Set the right right value.
+        //
+        if (v_servo_right_fling != null)
+        {
+            v_servo_right_fling.setPosition (l_position);
+        }
+
+    } // m_right_fling_position
+
+    //--------------------------------------------------------------------------
+    //
+    // a_left_zipline_position
+    //
+    /**
+     * Access the left zipline position.
+     */
+    double a_left_zipline_position ()
+    {
+        double l_return = 0.0;
+
+        if (v_servo_left_zipline != null)
+        {
+            l_return = v_servo_left_zipline.getPosition ();
+        }
+
+        return l_return;
+
+    } // a_left_zipline_position
+
+    //--------------------------------------------------------------------------
+    //
+    // m_left_zipline_position
+    //
+    /**
+     * Mutate the left zipline position.
+     */
+    void m_left_zipline_position (double p_position)
+    {
+        //
+        // Ensure the specific value is legal.
+        //
+        double l_position = Range.clip
+                ( p_position
+                        , Servo.MIN_POSITION
+                        , Servo.MAX_POSITION
+                );
+
+        //
+        // Set the right hand value.
+        //
+        if (v_servo_left_zipline != null)
+        {
+            //v_servo_left_zipline.setPosition (1.0 - l_position);
+            v_servo_left_zipline.setPosition (l_position);
+        }
+
+    } // m_left_zipline_position
+
+    //--------------------------------------------------------------------------
+    //
+    // a_right_zipline_position
+    //
+    /**
+     * Access the right zipline position.
+     */
+    double a_right_zipline_position ()
+    {
+        double l_return = 0.0;
+
+        if (v_servo_right_zipline != null)
+        {
+            l_return = v_servo_right_zipline.getPosition ();
+        }
+
+        return l_return;
+
+    } // a_right_zipline_position
+
+    //--------------------------------------------------------------------------
+    //
+    // m_right_zipline_position
+    //
+    /**
+     * Mutate the right zipline position.
+     */
+    void m_right_zipline_position (double p_position)
+    {
+        //
+        // Ensure the specific value is legal.
+        //
+        double l_position = Range.clip
+                ( p_position
+                        , Servo.MIN_POSITION
+                        , Servo.MAX_POSITION
+                );
+
+        //
+        // Set the right right value.
+        //
+        if (v_servo_right_zipline != null)
+        {
+            v_servo_right_zipline.setPosition (l_position);
+        }
+
+    }// m_right_zipline_position
+
+    public void init_arm() {
+
+        if (v_servo_arm_elbow != null)
+        {
+            v_servo_arm_elbow.setPosition(1.0);
+        }
+    }
+
+    public void raise_arm() {
+        if (v_servo_arm_elbow != null)
+        {
+            v_servo_arm_elbow.setPosition(0.5);
+        }
+
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    // open_hand
+    //
+    /**
+     * Open the hand to its fullest.
+     */
+    /*
+    void open_hand ()
+
+    {
+        //
+        // Set the value.  The right hand value must be opposite of the left
+        // value.
+        //
+        if (v_servo_left_hand != null)
+        {
+            v_servo_left_hand.setPosition (Servo.MAX_POSITION);
+        }
+        if (v_servo_right_hand != null)
+        {
+            v_servo_right_hand.setPosition (Servo.MIN_POSITION);
+        }
+
+    } // open_hand
+*/
+
+    //--------------------------------------------------------------------------
+    //
+    // update_telemetry
+    //
+    /**
+     * Update the telemetry with current values from the base class.
+     */
+    public void update_telemetry ()
+
+    {
+        if (a_warning_generated ())
+        {
+            set_first_message (a_warning_message ());
+        }
+        //
+        // Send telemetry data to the driver station.
+        //
+        telemetry.addData
+                ( "01"
+                        , "Left Drive Power: "
+                                + a_left_drive_power()
+                                + ", "
+                                + a_left_encoder_count ()
+                );
+        telemetry.addData
+                ( "02"
+                        , "Left Drive_2 Power: "
+                                + a_left_drive2_power()
+                );
+        telemetry.addData
+                ( "03"
+                        , "Right Drive Power: "
+                                + a_right_drive_power()
+                                + ", "
+                                + a_right_encoder_count()
+                );
+        telemetry.addData
+                ( "04"
+                        , "Right Drive_2 Power: "
+                                + a_right_drive2_power()
+                );
+        telemetry.addData
+                ( "05"
+                        , "Arm Shoulder Power: " + a_arm_power()
+                );
+        telemetry.addData
+                ( "06"
+                        , "Arm Elbow Position: " + a_arm_elbow_position()
+                );
+        telemetry.addData
+                ( "07"
+                        , "Arm Elbow Position2: " + a_arm_elbow_position2()
+                );
+        telemetry.addData
+                ( "08"
+                        , "Tape Msr Power: " + a_tape_msr_power()
+                );
+
+      //  telemetry.addData
+       //         ( "07"
+        //                , "Left Fling Position: " + a_left_fling_position()
+        // );
+        telemetry.addData
+                ( "09"
+                        , "Right Fling Position: " + a_right_fling_position()
+                );
+
+        telemetry.addData
+                ( "10"
+                        , "Left zipline Position: " + a_left_zipline_position()
+                );
+        telemetry.addData
+                ( "11"
+                        , "Right zipline Position: " + a_right_zipline_position()
+                );
+
+    } // update_telemetry
+
+    //--------------------------------------------------------------------------
+    //
+    // update_gamepad_telemetry
+    //
+    /**
+     * Update the telemetry with current gamepad readings.
+     */
+    public void update_gamepad_telemetry ()
+
+    {
+        //
+        // Send telemetry data concerning gamepads to the driver station.
+        //
+        telemetry.addData ("11", "GP1 Left: " + -gamepad1.left_stick_y);
+        telemetry.addData ("12", "GP1 Right: " + -gamepad1.right_stick_y);
+        telemetry.addData ("13", "GP1 X: " + gamepad1.x);
+        telemetry.addData ("14", "GP1 Y: " + gamepad1.y);
+        telemetry.addData ("15", "GP1 A: " + gamepad1.a);
+        telemetry.addData ("16", "GP1 B: " + gamepad1.b);
+        telemetry.addData ("17", "GP2 Left: " + -gamepad2.left_stick_y);
+        telemetry.addData ("18", "GP2 right: " + -gamepad2.right_stick_y);
+        telemetry.addData ("19", "GP2 X: " + gamepad2.x);
+        telemetry.addData ("20", "GP2 Y: " + gamepad2.y);
+        telemetry.addData ("21", "GP2 A: " + gamepad2.a);
+        telemetry.addData ("22", "GP2 B: " + gamepad2.b);
+
+    } // update_gamepad_telemetry
+
+    //--------------------------------------------------------------------------
+    //
+    // set_first_message
+    //
+    /**
+     * Update the telemetry's first message with the specified message.
+     */
+    public void set_first_message (String p_message)
+
+    {
+        telemetry.addData ( "00", p_message);
+
+    } // set_first_message
+
+    //--------------------------------------------------------------------------
+    //
+    // set_error_message
+    //
+    /**
+     * Update the telemetry's first message to indicate an error.
+     */
+    public void set_error_message (String p_message)
+
+    {
+        set_first_message ("ERROR: " + p_message);
+
+    } // set_error_message
+
+    //--------------------------------------------------------------------------
+    //
+    // v_warning_generated
+    //
+    /**
+     * Indicate whether a message is a available to the class user.
+     */
+    private boolean v_warning_generated = false;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_warning_message
+    //
+    /**
+     * Store a message to the user if one has been generated.
+     */
+    private String v_warning_message;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_motor_left_drive
+    //
+    /**
+     * Manage the aspects of the left drive motor.
+     */
+    private DcMotor v_motor_left_drive;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_motor_left_drive_2
+    //
+    /**
+     * Manage the aspects of the left drive motor.
+     */
+    private DcMotor v_motor_left_drive_2;
+    //--------------------------------------------------------------------------
+    //
+    // v_motor_right_drive
+    //
+    /**
+     * Manage the aspects of the right drive motor.
+     */
+    private DcMotor v_motor_right_drive;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_motor_right_drive
+    //
+    /**
+     * Manage the aspects of the right drive motor.
+     */
+    private DcMotor v_motor_right_drive_2;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_motor_arm
+    //
+    /**
+     * Manage the aspects of the left arm motor.
+     */
+    private DcMotor v_motor_arm;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_motor_tape_msr
+    //
+    /**
+     * Manage the aspects of the tape measure motor.
+     */
+    private DcMotor v_motor_tape_msr;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_servo_arm_elbow
+    //`
+    /**
+     * Manage the aspects of the left hand servo.
+     */
+    private Servo v_servo_arm_elbow;
+
+    //-------------------------------------------------------------------------
+
+    private Servo v_servo_arm_elbow2;
+    //--------------------------------------------------------------------------
+    //
+    // v_servo_left_fling
+    //
+    /**
+     * Manage the aspects of the left fling servo.
+     */
+ //   private Servo v_servo_left_fling;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_servo_right_fling
+    //
+    /**
+     * Manage the aspects of the right fling servo.
+     */
+    public Servo v_servo_right_fling;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_servo_left_zipline
+    //
+    /**
+     * Manage the aspects of the left zipline servo.
+     */
+    private Servo v_servo_left_zipline;
+
+    //--------------------------------------------------------------------------
+    //
+    // v_servo_right_zipline
+    //
+    /**
+     * Manage the aspects of the right zipline servo.
+     */
+    private Servo v_servo_right_zipline;
+
+
+} // AthenaBotManual
+
+Contact GitHub API Training Shop Blog About
+© 2016 GitHub, Inc. Terms Privacy Security Status Help
